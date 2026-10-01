@@ -1,0 +1,748 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Pemilik usaha yang login menggunakan akun Google",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID pemilik usaha",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Alamat email Google pemilik usaha",
+          "minLength": 3,
+          "maxLength": 200
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Nama tampilan pemilik usaha",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL foto profil Google",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "Waktu login terakhir dalam format ISO",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp pembuatan akun"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp pembaruan akun"
+        }
+      },
+      "required": [
+        "ownerId",
+        "email",
+        "displayName",
+        "photoUrl",
+        "lastLoginAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Pengaturan terpusat profil usaha, kredit, notifikasi, dan template WhatsApp",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "ownerName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150
+        },
+        "whatsappNumber": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 30
+        },
+        "businessAddress": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "businessLogoUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500000
+        },
+        "defaultInterestRate": {
+          "type": "number",
+          "description": "Default persentase bunga/keuntungan"
+        },
+        "defaultTenor": {
+          "type": "integer",
+          "description": "Default lama angsuran"
+        },
+        "defaultPeriod": {
+          "type": "string",
+          "enum": ["harian", "mingguan", "bulanan"]
+        },
+        "roundingRule": {
+          "type": "string",
+          "enum": ["none", "100", "500", "1000"]
+        },
+        "notifH7": { "type": "boolean" },
+        "notifH3": { "type": "boolean" },
+        "notifH1": { "type": "boolean" },
+        "notifHariH": { "type": "boolean" },
+        "notifOverdue": { "type": "boolean" },
+        "pushEnabled": { "type": "boolean" },
+        "waTemplateDue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "waTemplateOverdue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "waTemplatePaid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "businessName",
+        "ownerName",
+        "whatsappNumber",
+        "businessAddress",
+        "businessLogoUrl",
+        "defaultInterestRate",
+        "defaultTenor",
+        "defaultPeriod",
+        "roundingRule",
+        "notifH7",
+        "notifH3",
+        "notifH1",
+        "notifHariH",
+        "notifOverdue",
+        "pushEnabled",
+        "waTemplateDue",
+        "waTemplateOverdue",
+        "waTemplatePaid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Data nasabah kredit barang dan pinjaman uang (tanpa NIK dan pekerjaan)",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 30
+        },
+        "address": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "photoUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500000
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["aktif", "nonaktif"]
+        },
+        "isDeleted": {
+          "type": "boolean"
+        },
+        "createdDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "code",
+        "name",
+        "phone",
+        "address",
+        "photoUrl",
+        "notes",
+        "status",
+        "isDeleted",
+        "createdDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Loan": {
+      "title": "Loan",
+      "description": "Transaksi kredit barang (type: barang) atau pinjaman uang (type: uang)",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "customerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "customerPhone": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 30
+        },
+        "type": {
+          "type": "string",
+          "enum": ["barang", "uang"]
+        },
+        "itemName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "itemCategory": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "itemPrice": { "type": "number" },
+        "downPayment": { "type": "number" },
+        "principalAmount": { "type": "number" },
+        "interestRate": { "type": "number" },
+        "interestAmount": { "type": "number" },
+        "totalObligation": { "type": "number" },
+        "tenor": { "type": "integer" },
+        "period": {
+          "type": "string",
+          "enum": ["harian", "mingguan", "bulanan"]
+        },
+        "installmentAmount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "remainingBalance": { "type": "number" },
+        "startDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "firstDueDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "enum": ["aktif", "lunas", "dibatalkan"]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "photoUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500000
+        },
+        "isDeleted": { "type": "boolean" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "code",
+        "customerId",
+        "customerName",
+        "customerPhone",
+        "type",
+        "itemName",
+        "itemCategory",
+        "itemPrice",
+        "downPayment",
+        "principalAmount",
+        "interestRate",
+        "interestAmount",
+        "totalObligation",
+        "tenor",
+        "period",
+        "installmentAmount",
+        "paidAmount",
+        "remainingBalance",
+        "startDate",
+        "firstDueDate",
+        "status",
+        "notes",
+        "photoUrl",
+        "isDeleted",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Installment": {
+      "title": "Installment",
+      "description": "Jadwal angsuran otomatis untuk setiap kredit barang atau pinjaman uang",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "loanId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "customerPhone": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 30
+        },
+        "loanType": {
+          "type": "string",
+          "enum": ["barang", "uang"]
+        },
+        "loanItemName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "installmentNumber": { "type": "integer" },
+        "dueDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "amount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "remainingAmount": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["belum_bayar", "sebagian", "lunas", "dibatalkan"]
+        },
+        "paidAt": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "loanId",
+        "customerId",
+        "customerName",
+        "customerPhone",
+        "loanType",
+        "loanItemName",
+        "installmentNumber",
+        "dueDate",
+        "amount",
+        "paidAmount",
+        "remainingAmount",
+        "status",
+        "paidAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Transaksi pembayaran angsuran (tidak dapat dihapus permanen, hanya void/koreksi)",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "loanId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "installmentId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "installmentNumber": { "type": "integer" },
+        "customerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "loanType": {
+          "type": "string",
+          "enum": ["barang", "uang"]
+        },
+        "loanItemName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "amount": { "type": "number" },
+        "paymentDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "method": {
+          "type": "string",
+          "enum": ["tunai", "transfer", "lainnya"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["valid", "void"]
+        },
+        "voidReason": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "voidedAt": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 64
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "code",
+        "loanId",
+        "installmentId",
+        "installmentNumber",
+        "customerId",
+        "customerName",
+        "loanType",
+        "loanItemName",
+        "amount",
+        "paymentDate",
+        "method",
+        "status",
+        "voidReason",
+        "voidedAt",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Catatan pengingat jatuh tempo dan tunggakan",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "installmentId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "loanId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "type": {
+          "type": "string",
+          "enum": ["H-7", "H-3", "H-1", "HARI_H", "TUNGGAKAN", "SISTEM"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "dueDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "amount": { "type": "number" },
+        "isRead": { "type": "boolean" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "installmentId",
+        "loanId",
+        "customerId",
+        "customerName",
+        "type",
+        "title",
+        "body",
+        "dueDate",
+        "amount",
+        "isRead",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Catatan audit aktivitas penting pemilik usaha",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "entityType": {
+          "type": "string",
+          "enum": ["auth", "customer", "loan", "payment", "settings", "data"]
+        },
+        "entityId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150
+        },
+        "loanTitle": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "amount": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["Berhasil", "Void", "Info"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "timestampStr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "action",
+        "entityType",
+        "entityId",
+        "customerName",
+        "loanTitle",
+        "amount",
+        "status",
+        "description",
+        "timestampStr",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Profil pemilik usaha"
+    },
+    "/settings/{userId}": {
+      "schema": { "$ref": "#/entities/Setting" },
+      "description": "Pengaturan usaha milik user"
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Koleksi data nasabah milik pemilik usaha"
+    },
+    "/loans/{loanId}": {
+      "schema": { "$ref": "#/entities/Loan" },
+      "description": "Koleksi transaksi kredit barang dan pinjaman uang"
+    },
+    "/installments/{installmentId}": {
+      "schema": { "$ref": "#/entities/Installment" },
+      "description": "Koleksi jadwal angsuran"
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Koleksi riwayat pembayaran angsuran"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Koleksi notifikasi jatuh tempo dan tunggakan"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Koleksi audit log permanen"
+    }
+  }
+}

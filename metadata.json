@@ -1,0 +1,6 @@
+{
+  "name": "KreditKu",
+  "description": "Aplikasi PWA buku kredit digital modern untuk manajemen kredit barang dan pinjaman uang usaha perorangan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

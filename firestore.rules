@@ -1,0 +1,435 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && ownerId == request.auth.uid;
+    }
+
+    // 1. User Validation Blueprint
+    function isValidUser(data) {
+      return data.keys().hasAll(['ownerId', 'email', 'displayName', 'photoUrl', 'lastLoginAt', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'email', 'displayName', 'photoUrl', 'lastLoginAt', 'createdAt', 'updatedAt'])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.displayName is string && data.displayName.size() <= 200
+        && data.photoUrl is string && data.photoUrl.size() <= 2000
+        && data.lastLoginAt is string && data.lastLoginAt.size() >= 1 && data.lastLoginAt.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 2. Setting Validation Blueprint
+    function isValidSetting(data) {
+      return data.keys().hasAll([
+          'ownerId', 'businessName', 'ownerName', 'whatsappNumber', 'businessAddress', 'businessLogoUrl',
+          'defaultInterestRate', 'defaultTenor', 'defaultPeriod', 'roundingRule',
+          'notifH7', 'notifH3', 'notifH1', 'notifHariH', 'notifOverdue', 'pushEnabled',
+          'waTemplateDue', 'waTemplateOverdue', 'waTemplatePaid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'businessName', 'ownerName', 'whatsappNumber', 'businessAddress', 'businessLogoUrl',
+          'defaultInterestRate', 'defaultTenor', 'defaultPeriod', 'roundingRule',
+          'notifH7', 'notifH3', 'notifH1', 'notifHariH', 'notifOverdue', 'pushEnabled',
+          'waTemplateDue', 'waTemplateOverdue', 'waTemplatePaid', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.businessName is string && data.businessName.size() >= 1 && data.businessName.size() <= 150
+        && data.ownerName is string && data.ownerName.size() <= 150
+        && data.whatsappNumber is string && data.whatsappNumber.size() <= 30
+        && data.businessAddress is string && data.businessAddress.size() <= 500
+        && data.businessLogoUrl is string && data.businessLogoUrl.size() <= 500000
+        && (data.defaultInterestRate is int || data.defaultInterestRate is float) && data.defaultInterestRate >= 0 && data.defaultInterestRate <= 1000
+        && data.defaultTenor is int && data.defaultTenor >= 1 && data.defaultTenor <= 360
+        && data.defaultPeriod in ['harian', 'mingguan', 'bulanan']
+        && data.roundingRule in ['none', '100', '500', '1000']
+        && data.notifH7 is bool && data.notifH3 is bool && data.notifH1 is bool && data.notifHariH is bool && data.notifOverdue is bool && data.pushEnabled is bool
+        && data.waTemplateDue is string && data.waTemplateDue.size() >= 1 && data.waTemplateDue.size() <= 2000
+        && data.waTemplateOverdue is string && data.waTemplateOverdue.size() >= 1 && data.waTemplateOverdue.size() <= 2000
+        && data.waTemplatePaid is string && data.waTemplatePaid.size() >= 1 && data.waTemplatePaid.size() <= 2000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 3. Customer Validation Blueprint
+    function isValidCustomer(data) {
+      return data.keys().hasAll([
+          'ownerId', 'code', 'name', 'phone', 'address', 'photoUrl', 'notes',
+          'status', 'isDeleted', 'createdDate', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'code', 'name', 'phone', 'address', 'photoUrl', 'notes',
+          'status', 'isDeleted', 'createdDate', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.code is string && data.code.size() >= 1 && data.code.size() <= 50
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 150
+        && data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 30
+        && data.address is string && data.address.size() <= 500
+        && data.photoUrl is string && data.photoUrl.size() <= 500000
+        && data.notes is string && data.notes.size() <= 1000
+        && data.status in ['aktif', 'nonaktif']
+        && data.isDeleted is bool
+        && data.createdDate is string && data.createdDate.size() >= 1 && data.createdDate.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 4. Loan Validation Blueprint
+    function isValidLoan(data) {
+      return data.keys().hasAll([
+          'ownerId', 'code', 'customerId', 'customerName', 'customerPhone', 'type',
+          'itemName', 'itemCategory', 'itemPrice', 'downPayment', 'principalAmount',
+          'interestRate', 'interestAmount', 'totalObligation', 'tenor', 'period',
+          'installmentAmount', 'paidAmount', 'remainingBalance', 'startDate',
+          'firstDueDate', 'status', 'notes', 'photoUrl', 'isDeleted', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'code', 'customerId', 'customerName', 'customerPhone', 'type',
+          'itemName', 'itemCategory', 'itemPrice', 'downPayment', 'principalAmount',
+          'interestRate', 'interestAmount', 'totalObligation', 'tenor', 'period',
+          'installmentAmount', 'paidAmount', 'remainingBalance', 'startDate',
+          'firstDueDate', 'status', 'notes', 'photoUrl', 'isDeleted', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.code is string && data.code.size() >= 1 && data.code.size() <= 50
+        && isValidId(data.customerId)
+        && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 150
+        && data.customerPhone is string && data.customerPhone.size() >= 3 && data.customerPhone.size() <= 30
+        && data.type in ['barang', 'uang']
+        && data.itemName is string && data.itemName.size() >= 1 && data.itemName.size() <= 200
+        && data.itemCategory is string && data.itemCategory.size() >= 1 && data.itemCategory.size() <= 100
+        && (data.itemPrice is int || data.itemPrice is float) && data.itemPrice >= 0
+        && (data.downPayment is int || data.downPayment is float) && data.downPayment >= 0 && data.downPayment <= data.itemPrice
+        && (data.principalAmount is int || data.principalAmount is float) && data.principalAmount >= 0
+        && (data.interestRate is int || data.interestRate is float) && data.interestRate >= 0
+        && (data.interestAmount is int || data.interestAmount is float) && data.interestAmount >= 0
+        && (data.totalObligation is int || data.totalObligation is float) && data.totalObligation >= 0
+        && data.tenor is int && data.tenor >= 1 && data.tenor <= 360
+        && data.period in ['harian', 'mingguan', 'bulanan']
+        && (data.installmentAmount is int || data.installmentAmount is float) && data.installmentAmount >= 0
+        && (data.paidAmount is int || data.paidAmount is float) && data.paidAmount >= 0
+        && (data.remainingBalance is int || data.remainingBalance is float) && data.remainingBalance >= 0
+        && data.startDate is string && data.startDate.size() >= 1 && data.startDate.size() <= 64
+        && data.firstDueDate is string && data.firstDueDate.size() >= 1 && data.firstDueDate.size() <= 64
+        && data.status in ['aktif', 'lunas', 'dibatalkan']
+        && data.notes is string && data.notes.size() <= 1000
+        && data.photoUrl is string && data.photoUrl.size() <= 500000
+        && data.isDeleted is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 5. Installment Validation Blueprint
+    function isValidInstallment(data) {
+      return data.keys().hasAll([
+          'ownerId', 'loanId', 'customerId', 'customerName', 'customerPhone',
+          'loanType', 'loanItemName', 'installmentNumber', 'dueDate', 'amount',
+          'paidAmount', 'remainingAmount', 'status', 'paidAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'loanId', 'customerId', 'customerName', 'customerPhone',
+          'loanType', 'loanItemName', 'installmentNumber', 'dueDate', 'amount',
+          'paidAmount', 'remainingAmount', 'status', 'paidAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && isValidId(data.loanId)
+        && isValidId(data.customerId)
+        && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 150
+        && data.customerPhone is string && data.customerPhone.size() >= 3 && data.customerPhone.size() <= 30
+        && data.loanType in ['barang', 'uang']
+        && data.loanItemName is string && data.loanItemName.size() >= 1 && data.loanItemName.size() <= 200
+        && data.installmentNumber is int && data.installmentNumber >= 1 && data.installmentNumber <= 360
+        && data.dueDate is string && data.dueDate.size() >= 1 && data.dueDate.size() <= 64
+        && (data.amount is int || data.amount is float) && data.amount >= 0
+        && (data.paidAmount is int || data.paidAmount is float) && data.paidAmount >= 0
+        && (data.remainingAmount is int || data.remainingAmount is float) && data.remainingAmount >= 0
+        && data.status in ['belum_bayar', 'sebagian', 'lunas', 'dibatalkan']
+        && data.paidAt is string && data.paidAt.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 6. Payment Validation Blueprint
+    function isValidPayment(data) {
+      return data.keys().hasAll([
+          'ownerId', 'code', 'loanId', 'installmentId', 'installmentNumber',
+          'customerId', 'customerName', 'loanType', 'loanItemName', 'amount',
+          'paymentDate', 'method', 'status', 'voidReason', 'voidedAt', 'notes',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'code', 'loanId', 'installmentId', 'installmentNumber',
+          'customerId', 'customerName', 'loanType', 'loanItemName', 'amount',
+          'paymentDate', 'method', 'status', 'voidReason', 'voidedAt', 'notes',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.code is string && data.code.size() >= 1 && data.code.size() <= 50
+        && isValidId(data.loanId)
+        && isValidId(data.installmentId)
+        && data.installmentNumber is int && data.installmentNumber >= 1 && data.installmentNumber <= 360
+        && isValidId(data.customerId)
+        && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 150
+        && data.loanType in ['barang', 'uang']
+        && data.loanItemName is string && data.loanItemName.size() >= 1 && data.loanItemName.size() <= 200
+        && (data.amount is int || data.amount is float) && data.amount > 0
+        && data.paymentDate is string && data.paymentDate.size() >= 1 && data.paymentDate.size() <= 64
+        && data.method in ['tunai', 'transfer', 'lainnya']
+        && data.status in ['valid', 'void']
+        && data.voidReason is string && data.voidReason.size() <= 500
+        && data.voidedAt is string && data.voidedAt.size() <= 64
+        && data.notes is string && data.notes.size() <= 1000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 7. Notification Validation Blueprint
+    function isValidNotification(data) {
+      return data.keys().hasAll([
+          'ownerId', 'installmentId', 'loanId', 'customerId', 'customerName',
+          'type', 'title', 'body', 'dueDate', 'amount', 'isRead', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'installmentId', 'loanId', 'customerId', 'customerName',
+          'type', 'title', 'body', 'dueDate', 'amount', 'isRead', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && isValidId(data.installmentId)
+        && isValidId(data.loanId)
+        && isValidId(data.customerId)
+        && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 150
+        && data.type in ['H-7', 'H-3', 'H-1', 'HARI_H', 'TUNGGAKAN', 'SISTEM']
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.body is string && data.body.size() >= 1 && data.body.size() <= 1000
+        && data.dueDate is string && data.dueDate.size() >= 1 && data.dueDate.size() <= 64
+        && (data.amount is int || data.amount is float) && data.amount >= 0
+        && data.isRead is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 8. AuditLog Validation Blueprint
+    function isValidAuditLog(data) {
+      return data.keys().hasAll([
+          'ownerId', 'action', 'entityType', 'entityId', 'customerName',
+          'loanTitle', 'amount', 'status', 'description', 'timestampStr', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'action', 'entityType', 'entityId', 'customerName',
+          'loanTitle', 'amount', 'status', 'description', 'timestampStr', 'createdAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.action is string && data.action.size() >= 1 && data.action.size() <= 100
+        && data.entityType in ['auth', 'customer', 'loan', 'payment', 'settings', 'data']
+        && isValidId(data.entityId)
+        && data.customerName is string && data.customerName.size() <= 150
+        && data.loanTitle is string && data.loanTitle.size() <= 200
+        && (data.amount is int || data.amount is float) && data.amount >= 0
+        && data.status in ['Berhasil', 'Void', 'Info']
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 1000
+        && data.timestampStr is string && data.timestampStr.size() >= 1 && data.timestampStr.size() <= 100
+        && data.createdAt is timestamp;
+    }
+
+    // Collection: /users/{userId}
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && userId == request.auth.uid && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(userId) && userId == request.auth.uid
+        && isValidUser(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && isValidId(userId) && userId == request.auth.uid
+        && isValidUser(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'photoUrl', 'lastLoginAt', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // Collection: /settings/{userId}
+    match /settings/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && userId == request.auth.uid && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(userId) && userId == request.auth.uid
+        && isValidSetting(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && isValidId(userId) && userId == request.auth.uid
+        && isValidSetting(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'businessName', 'ownerName', 'whatsappNumber', 'businessAddress', 'businessLogoUrl',
+          'defaultInterestRate', 'defaultTenor', 'defaultPeriod', 'roundingRule',
+          'notifH7', 'notifH3', 'notifH1', 'notifHariH', 'notifOverdue', 'pushEnabled',
+          'waTemplateDue', 'waTemplateOverdue', 'waTemplatePaid', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Collection: /customers/{customerId}
+    match /customers/{customerId} {
+      allow get: if isSignedIn() && isValidId(customerId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(customerId)
+        && isValidCustomer(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && isValidId(customerId)
+        && isValidCustomer(incoming())
+        && isOwner(existing().ownerId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'code', 'name', 'phone', 'address', 'photoUrl', 'notes', 'status', 'isDeleted', 'createdDate', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Collection: /loans/{loanId}
+    match /loans/{loanId} {
+      allow get: if isSignedIn() && isValidId(loanId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(loanId)
+        && isValidLoan(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/customers/$(incoming().customerId))
+        && getAfter(/databases/$(database)/documents/customers/$(incoming().customerId)).data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(loanId)
+        && isValidLoan(incoming())
+        && isOwner(existing().ownerId)
+        && existing().status != 'dibatalkan'
+        && incoming().ownerId == existing().ownerId
+        && incoming().customerId == existing().customerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'customerName', 'customerPhone', 'itemName', 'itemCategory', 'paidAmount',
+          'remainingBalance', 'status', 'notes', 'photoUrl', 'isDeleted', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Collection: /installments/{installmentId}
+    match /installments/{installmentId} {
+      allow get: if isSignedIn() && isValidId(installmentId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(installmentId)
+        && isValidInstallment(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/loans/$(incoming().loanId))
+        && getAfter(/databases/$(database)/documents/loans/$(incoming().loanId)).data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(installmentId)
+        && isValidInstallment(incoming())
+        && isOwner(existing().ownerId)
+        && existing().status != 'dibatalkan'
+        && incoming().ownerId == existing().ownerId
+        && incoming().loanId == existing().loanId
+        && incoming().customerId == existing().customerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'customerName', 'customerPhone', 'loanItemName', 'paidAmount', 'remainingAmount', 'status', 'paidAt', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Collection: /payments/{paymentId}
+    match /payments/{paymentId} {
+      allow get: if isSignedIn() && isValidId(paymentId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(paymentId)
+        && isValidPayment(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/loans/$(incoming().loanId))
+        && getAfter(/databases/$(database)/documents/loans/$(incoming().loanId)).data.ownerId == request.auth.uid
+        && existsAfter(/databases/$(database)/documents/installments/$(incoming().installmentId))
+        && getAfter(/databases/$(database)/documents/installments/$(incoming().installmentId)).data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(paymentId)
+        && isValidPayment(incoming())
+        && isOwner(existing().ownerId)
+        && existing().status != 'void'
+        && incoming().ownerId == existing().ownerId
+        && incoming().loanId == existing().loanId
+        && incoming().installmentId == existing().installmentId
+        && incoming().customerId == existing().customerId
+        && incoming().amount == existing().amount
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().status == 'void'
+        && incoming().voidReason.size() >= 3
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'status', 'voidReason', 'voidedAt', 'notes', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Collection: /notifications/{notificationId}
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && isValidId(notificationId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(notificationId)
+        && isValidNotification(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && isValidId(notificationId)
+        && isValidNotification(incoming())
+        && isOwner(existing().ownerId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['isRead', 'title', 'body', 'amount', 'dueDate', 'updatedAt']);
+      allow delete: if isSignedIn() && isValidId(notificationId) && isOwner(existing().ownerId);
+    }
+
+    // Collection: /audit_logs/{logId}
+    match /audit_logs/{logId} {
+      allow get: if isSignedIn() && isValidId(logId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(logId)
+        && isValidAuditLog(incoming())
+        && incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+  }
+}
